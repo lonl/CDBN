@@ -44,15 +44,18 @@ The comparison results (accuracy) are as follows:
 
 ## Note
 * Different computation methods can be selected. Currently, matlab matrix computation, MEX, CDUA are supported. You can change the computation method globaly in 'CDBN/toolbox/CDBNLIB/default_layer2D.m' by select one of the methods.
-
+`
  layer.matlab_use    = 0;
  layer.mex_use       = 1;
  layer.cuda_use      = 0;
+`
 
 or you can change the computation method in the layer defination, for example, you can add above lines to 'DemoCDBN_Binary_2D.m' at layer 1's defination as:
+`
  layer{1}.matlab_use    = 0;
  layer{1}.mex_use       = 0;
  layer{1}.cuda_use      = 1;
+`
 
 * The acceleration effect of 'CUDA' version is not obvious in first layer. But it may be better in the later layer for big size pictures. 
 
