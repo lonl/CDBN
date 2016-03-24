@@ -10,9 +10,7 @@ function model = crbm2D(layer)
 
 %% --------------------- INITIALIZE THE PARAMETERS IN MODEL ----------------- %%
 
-matlab_use        = layer.matlab_use;
-mex_use           = layer.mex_use;
-cuda_use          = layer.cuda_use;
+cpu               = layer.cpu;
 batchsize         = layer.batchsize;
 model.n_cd        = layer.n_cd;
 model.momentum    = layer.momentum;
@@ -32,6 +30,8 @@ model.v_size      = [layer.s_inputdata(1), layer.s_inputdata(2)];
 model.v_input     = zeros(layer.s_inputdata(1), layer.s_inputdata(2), layer.n_map_v,batchsize);          
 model.h_size      = (layer.s_inputdata - layer.s_filter)./(layer.stride) + 1;
 model.h_input     = zeros(model.h_size(1), model.h_size(2), layer.n_map_h, batchsize);
+model.error       = zeros(layer.n_epoch,1);
+
 
 % ADD SOME OTHER PARAMETERS FOR TEST
 model.winc = 0;
@@ -51,6 +51,7 @@ groups            = repmat(1:numbatches, 1, batchsize);
 groups            = groups(1:N);
 perm              = randperm(N);
 groups            = groups(perm);
+dW                = zeros(size(model.dW));
 
 for i = 1:numbatches
     batchdata{i}  = layer.inputdata(:,:,:,groups == i);
@@ -69,37 +70,33 @@ for epoch = 1:layer.n_epoch
         batch_data  = batchdata{i};
         
         
-        %----------------------------------------------------------------------%
+        %-----------------------------------------------------------------%
+        switch cpu
+            case 'mex'
+            %----------------- HERE COMPLETE WITH MEX FUNCTION -----------%
+                [model_new] = crbm2D_batch_mex(model,layer,batch_data);
+
+                dW                  = model_new.dW;
+                model.v_sample      = model_new.v_sample;
+                model.h_sample      = model_new.h_sample;
+                model.h_sample_init = model_new.h_sample_init;
         
-        %----------------- HERE COMPLETE WITH MEX FUNCTION --------------------%
-        if mex_use == 1
-            [model_new] = crbm2D_batch_mex(model,layer,batch_data);
-            
-            dW                  = model_new.dW;
-            model.v_sample      = model_new.v_sample;
-            model.h_sample      = model_new.h_sample;
-            model.h_sample_init = model_new.h_sample_init;
-        end
+            case 'cuda'
+                %-------------- HERE COMPLETE WITH CUDA FUNCTION ---------%
+                [model_new] = crbm2D_mex_cuda(model,layer,batch_data);
+
+                dW                  = model_new.dW;
+                model.v_sample      = model_new.v_sample;
+                model.h_sample      = model_new.h_sample;
+                model.h_sample_init = model_new.h_sample_init;        
         
-        %----------------- HERE COMPLETE WITH CUDA FUNCTION -------------------%
-        
-        if cuda_use == 1
-            [model_new] = crbm2D_mex_cuda(model,layer,batch_data);
-            
-            dW                  = model_new.dW;
-            model.v_sample      = model_new.v_sample;
-            model.h_sample      = model_new.h_sample;
-            model.h_sample_init = model_new.h_sample_init;
-        end
+            case 'matlab'
+                %-------------- HERE COMPLETE WITH MATLAB FUNCTION -------%
+                [model, dW] = calc_gradient2D(model,layer,batch_data);
+        end % switch
         
         
-        %----------------- HERE COMPLETE WITH MATLAB FUNCTION -----------------%
-        
-        if matlab_use == 1
-            [model, dW] = calc_gradient2D(model,layer,batch_data);
-        end
-        
-        %----------------------------------------------------------------------%
+        %-----------------------------------------------------------------%
         
         % UPDATE THE MODEL PARAMETERS
         model = apply_gradient2D(model,layer,batch_data,dW);
@@ -108,15 +105,16 @@ for epoch = 1:layer.n_epoch
         
         err1        = (batch_data - model.v_sample).^2;
         err         = err + sum(sum(sum(sum(err1))));
-    end
+    end % numbatches
     
 
     if (model.start_gau > model.stop_gau)
         model.start_gau = model.start_gau*0.99;
     end
         
+    model.error(epoch) = err;
     
-    fprintf('epoch %d/%d), reconstruction err %f, sparsity %f\n', epoch,layer.n_epoch,err, mean(sparsity(:)));
+    fprintf('    epoch %d/%d, reconstruction err %f, sparsity %f\n', epoch,layer.n_epoch,err, mean(sparsity(:)));
     toc;
   
 end
@@ -124,23 +122,18 @@ end
 %% ----------------------- OUTPUT THE POOLING LAYER ------------------------- %%
 
 % CHOOSE DIFFERENT FORWARD MODEL
-if matlab_use == 1
-    output = crbm_forward2D_batch_mex(model,layer,layer.inputdata);
-    model.output = output;
-end
+switch cpu
+    case 'matlab'
+        output = crbm_forward2D(model,layer,layer.inputdata);
+        model.output = output;
+    case 'mex'
+        output = crbm_forward2D_batch_mex(model,layer,layer.inputdata);
+        model.output = output;
+    case 'cuda'
+        output = crbm_forward2D_batch_mex(model,layer,layer.inputdata);
+        model.output = output;
+end % switch
 
-if mex_use == 1
-    output = crbm_forward2D_batch_mex(model,layer,layer.inputdata);
-    model.output = output;
-end
-
-if cuda_use == 1
-    output = crbm_forward2D_batch_mex(model,layer,layer.inputdata);
-    model.output = output;
-end
-
-
-
-
+end % function
 
 

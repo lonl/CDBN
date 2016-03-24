@@ -69,7 +69,7 @@ public:
         return 0;
     }
 
-    int release(void) {
+    void release(void) {
         if( data_input    != NULL ) delete [] data_input;
         if( data_kernel   != NULL ) delete [] data_kernel;
         if( h_bias        != NULL ) delete [] h_bias;
@@ -90,7 +90,7 @@ public:
 
     }
 
-    int release_no_free(void) {
+    void release_no_free(void) {
         data_input    = NULL;
         data_kernel   = NULL;
         h_bias        = NULL;

@@ -5,6 +5,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+void crbm_inference2D(double h_sample[], double h_input[],double h_state[],
+                      const mxArray *model,const mxArray *layer, 
+                      const mxArray *batch_data);
+void crbm_reconstruct2D(double v_sample[], double v_input[], double h_state[], 
+                        const mxArray *model,const mxArray *layer);
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {
