@@ -21,8 +21,14 @@ block = zeros(size(h_input));
 for k = 1:N
 for i = 1:floor(row/y_stride)
     offset_r = ((i-1)*y_stride+1):(i*y_stride);
+    if length(offset_r)==1	% for extreme size like [1,1]
+        offset_r = [offset_r, offset_r];
+    end
     for j = 1:floor(col/x_stride)
         offset_c = ((j-1)*x_stride+1):(j*x_stride);
+        if length(offset_c)==1
+            offset_c = [offset_c, offset_c];
+        end
         block_val = squeeze(sum(sum(h_input(offset_r,offset_c,:,k))));
         block(offset_r,offset_c,:,k) = repmat(permute(block_val, [2,3,1]), numel(offset_r),numel(offset_c));
     end

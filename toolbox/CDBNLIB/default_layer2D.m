@@ -23,10 +23,7 @@ layer.n_cd          = 1;        % NUMBER OF GIBBS SAMPLES
 layer.momentum      = 0.9;      % GRADIENT MOMENTUM FOR WEIGHT UPDATES
 layer.whiten        = 1;        % WHETHER TO BE WHITEN
 layer.type_input    = 'Binary'; % INPUT STYPE
-
-layer.matlab_use    = 0;        %-----------------------------------------------%
-layer.mex_use       = 1;        % JUST ONE STYPE: MEX OR MATLAB OR CUDA USED HERE
-layer.cuda_use      = 0;        %-----------------------------------------------%
+layer.cpu           = 'matlab'; % computation type 'matlab' or 'mex' or 'cuda'
 
                                 %-----------------------------------------------% 
 layer.stride        = [1 1];    % STRIDE OF FILTER MOVE
